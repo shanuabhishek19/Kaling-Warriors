@@ -25,4 +25,3 @@ jobs:
         run: |
           supabase functions deploy send-notification-email --project-ref "$SUPABASE_PROJECT_ID" --no-verify-jwt
           supabase functions deploy manage-admin --project-ref "$SUPABASE_PROJECT_ID"
-          supabase functions deploy trigger-cricheroes-sync --project-ref "$SUPABASE_PROJECT_ID"
