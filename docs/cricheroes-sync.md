@@ -17,8 +17,9 @@ never sent to the browser.
 The worker uses the public profile URL `12483791/kalinga-warriors` by default. Set
 `CRICHEROES_TEAM_URL` in the workflow if the team profile changes.
 
-The worker preserves admin-owned values such as player roles, bios, jersey numbers,
-club logo, and ground settings. Apply the migration
+The worker uses Selenium to load CricHeroes' public team routes and BeautifulSoup
+to parse the current members and matches pages. It preserves admin-owned values
+such as player roles, bios, jersey numbers, club logo, and ground settings. Apply the migration
 `20260912140000_add_cricheroes_sync_metadata.sql` before enabling the workflow.
 
 Edge Functions are deployed by `.github/workflows/deploy-supabase-functions.yml`.
@@ -28,7 +29,7 @@ started manually from GitHub Actions.
 
 ## Important limitation
 
-`cricheroes` is an unofficial Selenium scraper. CricHeroes can block automation or
-change its HTML structure. The job fails without deleting existing Supabase data;
+The CricHeroes site can block automation or change its HTML structure. The job fails
+without deleting existing Supabase data;
 review the Actions log after a failed run. Use an official CricHeroes export/API if
 one becomes available.

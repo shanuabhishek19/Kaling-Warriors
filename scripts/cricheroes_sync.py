@@ -6,17 +6,37 @@ roles, bios, jersey numbers, and club settings remain unchanged.
 from __future__ import annotations
 
 import os
+import re
 import sys
+import time
+from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Any
 
+from bs4 import BeautifulSoup
 import requests
-from cricheroes import Team
-from selenium.common.exceptions import NoSuchElementException
+from selenium import webdriver
 
 TEAM_URL = os.environ.get("CRICHEROES_TEAM_URL", "12483791/kalinga-warriors")
 SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
 SERVICE_ROLE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
+
+
+@dataclass
+class SourcePlayer:
+    name: str
+    profile_pic_url: str | None
+    profile_url: str | None = None
+
+
+@dataclass
+class SourceMatch:
+    match_date: date
+    tournament: str
+    venue: str
+    result: str
+    score: str
+    url: str
 
 
 def headers() -> dict[str, str]:
@@ -39,40 +59,82 @@ def request(method: str, table: str, payload: Any, params: str = "") -> None:
     response.raise_for_status()
 
 
-def tolerate_missing_matches_tab() -> None:
-    original_click_and_fetch = Team._Team__click_and_fetch
-    original_get_matches = Team.get_matches
+def team_url(path: str) -> str:
+    return f"https://cricheroes.com/team-profile/{TEAM_URL.strip('/')}/{path}"
 
-    def click_and_fetch(self: Team, driver: Any, tab: str, *args: Any, **kwargs: Any) -> str:
-        try:
-            return original_click_and_fetch(self, driver, tab, *args, **kwargs)
-        except NoSuchElementException:
-            if tab != "matchesTab":
-                raise
-            print("CricHeroes has no matches tab; continuing without match updates.")
-            return driver.page_source
 
-    Team._Team__click_and_fetch = click_and_fetch
+def page_source(driver: webdriver.Chrome, path: str) -> BeautifulSoup:
+    driver.get(team_url(path))
+    time.sleep(2)
+    return BeautifulSoup(driver.page_source, "html.parser")
 
-    def get_matches(self: Team) -> list[Any]:
-        try:
-            return original_get_matches(self)
-        except (AttributeError, NoSuchElementException):
-            print("CricHeroes returned no match container; continuing without match updates.")
-            return []
 
-    Team.get_matches = get_matches
+def parse_players(soup: BeautifulSoup) -> list[SourcePlayer]:
+    players = []
+    for card in soup.select("div.card"):
+        name = card.select_one(".topRow span")
+        if not name:
+            continue
+        image = card.select_one('img[alt="profile"]')
+        players.append(
+            SourcePlayer(
+                name=name.get_text(" ", strip=True),
+                profile_pic_url=image.get("src") if image else None,
+            )
+        )
+    return players
+
+
+def parse_matches(soup: BeautifulSoup) -> list[SourceMatch]:
+    matches = []
+    for card in soup.select('a[href*="/match-detail/"]'):
+        text = card.get_text(" ", strip=True)
+        match_date = re.search(r"\b\d{2}-[A-Za-z]{3}-\d{2}\b", text)
+        if not match_date:
+            continue
+        teams = [team.get_text(" ", strip=True) for team in card.select(".teamNameText")]
+        opponent = next((team for team in teams if team.upper() != "KALINGA WARRIORS"), "")
+        info = card.select_one(".matchInfo p")
+        result = card.select_one(".bottomInfo")
+        tournament = card.select_one(".tournamentName")
+        matches.append(
+            SourceMatch(
+                match_date=datetime.strptime(match_date.group(), "%d-%b-%y").date(),
+            tournament=tournament.get_text(" ", strip=True) if tournament else "CricHeroes fixture",
+                venue=info.get_text(" ", strip=True).split(",")[0] if info else "",
+                result=result.get_text(" ", strip=True) if result else "",
+                score="",
+                url="https://cricheroes.com" + card.get("href", ""),
+            )
+        )
+    return matches
 
 
 def get_source() -> dict[str, Any]:
-    tolerate_missing_matches_tab()
-    return Team(url=TEAM_URL).fetch_all_data()
+    options = webdriver.ChromeOptions()
+    options.add_argument("--headless=new")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--no-sandbox")
+    driver = webdriver.Chrome(options=options)
+    try:
+        members = page_source(driver, "members")
+        matches = page_source(driver, "matches")
+        name = next(
+            (value.strip() for value in members.find_all(string=True) if value.strip() == "KALINGA WARRIORS"),
+            TEAM_URL.rsplit("/", 1)[-1].replace("-", " ").title(),
+        )
+        logo = members.select_one('img[alt="profile picture"]')
+        return {
+            "team_name": name,
+            "team_logo": logo.get("src") if logo else None,
+            "players": parse_players(members),
+            "matches": parse_matches(matches),
+        }
+    finally:
+        driver.quit()
 
 
 def sync() -> None:
-    # The published package defaults to cricheroes.in; the supplied profile is
-    # on cricheroes.com, so override its base URL before constructing Team.
-    Team.BASE_URL = "https://cricheroes.com/team-profile"
     source = get_source()
 
     team_name = str(source.get("team_name") or "").strip()
