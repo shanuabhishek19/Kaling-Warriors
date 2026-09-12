@@ -1,6 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Facebook, Instagram, Mail, MapPin, MessageCircle, Phone, Youtube } from "lucide-react";
+import {
+  Facebook,
+  Instagram,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Phone,
+  Youtube,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { SectionHeading } from "@/components/ui-bits";
@@ -16,7 +24,10 @@ export const Route = createFileRoute("/contact")({
           "Call, email or WhatsApp Kalinga Warriors for match challenges, ground bookings and club enquiries in Bengaluru.",
       },
       { property: "og:title", content: "Contact Kalinga Warriors" },
-      { property: "og:description", content: "Phone, email, WhatsApp and ground location." },
+      {
+        property: "og:description",
+        content: "Phone, email, WhatsApp and ground location.",
+      },
     ],
   }),
   component: ContactPage,
@@ -24,6 +35,9 @@ export const Route = createFileRoute("/contact")({
 
 function ContactPage() {
   const { data: team } = useQuery(teamSettingsQuery);
+  const groundLocation = "VQ4M+6H8 Sarjapura, Karnataka";
+  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(groundLocation)}`;
+  const embeddedMapUrl = `https://www.google.com/maps?q=${encodeURIComponent(groundLocation)}&output=embed`;
 
   const socials = [
     { url: team?.instagram_url, label: "Instagram", icon: Instagram },
@@ -47,7 +61,10 @@ function ContactPage() {
             </a>
           </ContactRow>
           <ContactRow icon={Mail} label="Email">
-            <a href={`mailto:${team?.email ?? ""}`} className="hover:text-primary">
+            <a
+              href={`mailto:${team?.email ?? ""}`}
+              className="hover:text-primary"
+            >
               {team?.email}
             </a>
           </ContactRow>
@@ -67,7 +84,9 @@ function ContactPage() {
 
           {socials.length ? (
             <div>
-              <p className="font-heading text-xs uppercase tracking-widest text-primary">Follow</p>
+              <p className="font-heading text-xs uppercase tracking-widest text-primary">
+                Follow
+              </p>
               <div className="mt-3 flex gap-3">
                 {socials.map((social) => (
                   <a
@@ -89,36 +108,34 @@ function ContactPage() {
             <Button asChild className="font-heading uppercase tracking-wide">
               <Link to="/challenge">Challenge us</Link>
             </Button>
-            <Button asChild variant="outline" className="font-heading uppercase tracking-wide">
+            <Button
+              asChild
+              variant="outline"
+              className="font-heading uppercase tracking-wide"
+            >
               <Link to="/book-ground">Book the ground</Link>
             </Button>
           </div>
         </div>
 
         <div className="glass overflow-hidden rounded-2xl">
-          {team?.maps_url ? (
+          <a
+            href={googleMapsUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="group relative block min-h-80"
+          >
             <iframe
-              title="Ground location map"
-              src={team.maps_url}
+              title="SRF Cricket Ground map"
+              src={embeddedMapUrl}
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
-              className="size-full min-h-80 border-0"
+              className="pointer-events-none size-full min-h-80 border-0"
             />
-          ) : (
-            <div className="flex size-full min-h-80 flex-col items-center justify-center gap-3 p-8 text-center">
-              <MapPin className="size-8 text-primary" />
-              <p className="font-heading text-lg uppercase tracking-wide">{team?.address}</p>
-              <Button asChild variant="secondary">
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(team?.address ?? "")}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Open in Google Maps
-                </a>
-              </Button>
-            </div>
-          )}
+            <span className="absolute inset-x-4 bottom-4 flex items-center justify-center rounded-md bg-background/90 px-4 py-3 text-sm font-medium shadow-lg transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+              Open in Google Maps
+            </span>
+          </a>
         </div>
       </div>
     </section>

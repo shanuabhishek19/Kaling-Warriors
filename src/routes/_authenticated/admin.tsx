@@ -9,6 +9,7 @@ import {
   Clock3,
   FilePlus2,
   ImagePlus,
+  RefreshCw,
   LogOut,
   Menu,
   Save,
@@ -37,6 +38,7 @@ import { MediaImage } from "@/components/media-image";
 import { AdminPlayersPanel } from "@/components/admin-players-panel";
 import { AdminManagementPanel } from "@/components/admin-management-panel";
 import { AdminGalleryPanel } from "@/components/admin-gallery-panel";
+import { AdminSyncPanel } from "@/components/admin-sync-panel";
 type Panel =
   | "overview"
   | "requests"
@@ -45,7 +47,8 @@ type Panel =
   | "ground"
   | "settings"
   | "admins"
-  | "gallery";
+  | "gallery"
+  | "sync";
 import { StatusBadge, StatCard } from "@/components/ui-bits";
 import { useIsAdmin, useSession } from "@/hooks/use-session";
 import {
@@ -101,6 +104,7 @@ const panels: { id: Panel; label: string; icon: typeof Trophy }[] = [
   { id: "settings", label: "Club settings", icon: Settings2 },
   { id: "admins", label: "Administrators", icon: ShieldCheck },
   { id: "gallery", label: "Gallery", icon: ImagePlus },
+  { id: "sync", label: "CricHeroes sync", icon: RefreshCw },
 ];
 
 function AdminDashboard() {
@@ -292,6 +296,7 @@ function AdminDashboard() {
                 onRefresh={() => refresh("gallery")}
               />
             ) : null}
+            {panel === "sync" ? <AdminSyncPanel /> : null}
           </div>
         </main>
       </div>

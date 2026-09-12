@@ -8,6 +8,11 @@ Configure these GitHub repository secrets:
 - `SUPABASE_URL`: the project URL
 - `SUPABASE_SERVICE_ROLE_KEY`: Supabase service-role key; never expose it to the browser
 - `TEAM_SETTINGS_ID`: UUID of the single `team_settings` row
+- `GITHUB_SYNC_TOKEN`: GitHub token with Actions write access for this repository
+
+Administrators can also start the workflow from the dashboard's **CricHeroes sync** panel.
+The token is used only by the protected `trigger-cricheroes-sync` Edge Function and is
+never sent to the browser.
 
 The worker uses the public profile URL `12483791/kalinga-warriors` by default. Set
 `CRICHEROES_TEAM_URL` in the workflow if the team profile changes.
