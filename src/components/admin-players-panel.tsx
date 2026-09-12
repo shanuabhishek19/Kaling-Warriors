@@ -252,6 +252,9 @@ function PlayerForm({
       const payload = {
         name,
         jersey_number: Number(form.get("jersey_number")) || null,
+        matches: Math.max(0, Math.trunc(Number(form.get("matches")) || 0)),
+        runs: Math.max(0, Math.trunc(Number(form.get("runs")) || 0)),
+        wickets: Math.max(0, Math.trunc(Number(form.get("wickets")) || 0)),
         role,
         batting_style: battingStyle,
         bowling_style: bowlingStyle,
@@ -358,6 +361,30 @@ function PlayerForm({
           Playing details
         </p>
       </div>
+      <Field
+        name="matches"
+        label="Matches"
+        type="number"
+        defaultValue={player?.matches ?? 0}
+        min={0}
+        step={1}
+      />
+      <Field
+        name="runs"
+        label="Runs"
+        type="number"
+        defaultValue={player?.runs ?? 0}
+        min={0}
+        step={1}
+      />
+      <Field
+        name="wickets"
+        label="Wickets"
+        type="number"
+        defaultValue={player?.wickets ?? 0}
+        min={0}
+        step={1}
+      />
       <SelectField
         name="role"
         label="Primary role"
@@ -404,12 +431,16 @@ function Field({
   type = "text",
   defaultValue,
   required = false,
+  min,
+  step,
 }: {
   name: string;
   label: string;
   type?: string;
   defaultValue?: string | number;
   required?: boolean;
+  min?: number;
+  step?: number;
 }) {
   return (
     <div className="space-y-2">
@@ -420,6 +451,8 @@ function Field({
         type={type}
         defaultValue={defaultValue}
         required={required}
+        min={min}
+        step={step}
       />
     </div>
   );
