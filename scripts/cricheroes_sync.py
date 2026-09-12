@@ -12,6 +12,7 @@ from typing import Any
 
 import requests
 from cricheroes import Team
+from selenium.common.exceptions import NoSuchElementException
 
 TEAM_URL = os.environ.get("CRICHEROES_TEAM_URL", "12483791/kalinga-warriors")
 SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
@@ -38,11 +39,41 @@ def request(method: str, table: str, payload: Any, params: str = "") -> None:
     response.raise_for_status()
 
 
+def tolerate_missing_matches_tab() -> None:
+    original_click_and_fetch = Team._Team__click_and_fetch
+    original_get_matches = Team.get_matches
+
+    def click_and_fetch(self: Team, driver: Any, tab: str, *args: Any, **kwargs: Any) -> str:
+        try:
+            return original_click_and_fetch(self, driver, tab, *args, **kwargs)
+        except NoSuchElementException:
+            if tab != "matchesTab":
+                raise
+            print("CricHeroes has no matches tab; continuing without match updates.")
+            return driver.page_source
+
+    Team._Team__click_and_fetch = click_and_fetch
+
+    def get_matches(self: Team) -> list[Any]:
+        try:
+            return original_get_matches(self)
+        except (AttributeError, NoSuchElementException):
+            print("CricHeroes returned no match container; continuing without match updates.")
+            return []
+
+    Team.get_matches = get_matches
+
+
+def get_source() -> dict[str, Any]:
+    tolerate_missing_matches_tab()
+    return Team(url=TEAM_URL).fetch_all_data()
+
+
 def sync() -> None:
     # The published package defaults to cricheroes.in; the supplied profile is
     # on cricheroes.com, so override its base URL before constructing Team.
     Team.BASE_URL = "https://cricheroes.com/team-profile"
-    source = Team(url=TEAM_URL).fetch_all_data()
+    source = get_source()
 
     team_name = str(source.get("team_name") or "").strip()
     logo = str(source.get("team_logo") or "").strip() or None
