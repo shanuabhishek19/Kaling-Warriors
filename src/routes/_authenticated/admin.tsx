@@ -36,6 +36,7 @@ import {
 import { MediaImage } from "@/components/media-image";
 import { AdminPlayersPanel } from "@/components/admin-players-panel";
 import { AdminManagementPanel } from "@/components/admin-management-panel";
+import { AdminGalleryPanel } from "@/components/admin-gallery-panel";
 type Panel =
   | "overview"
   | "requests"
@@ -43,12 +44,14 @@ type Panel =
   | "players"
   | "ground"
   | "settings"
-  | "admins";
+  | "admins"
+  | "gallery";
 import { StatusBadge, StatCard } from "@/components/ui-bits";
 import { useIsAdmin, useSession } from "@/hooks/use-session";
 import {
   bookingsQuery,
   challengesQuery,
+  galleryQuery,
   matchesQuery,
   notificationsQuery,
   ADDITIONAL_PLAYER_ROLES,
@@ -97,6 +100,7 @@ const panels: { id: Panel; label: string; icon: typeof Trophy }[] = [
   { id: "ground", label: "Ground slots", icon: Clock3 },
   { id: "settings", label: "Club settings", icon: Settings2 },
   { id: "admins", label: "Administrators", icon: ShieldCheck },
+  { id: "gallery", label: "Gallery", icon: ImagePlus },
 ];
 
 function AdminDashboard() {
@@ -115,6 +119,7 @@ function AdminDashboard() {
   const notifications = useQuery(notificationsQuery);
   const slots = useQuery(slotsQuery);
   const settings = useQuery(teamSettingsQuery);
+  const gallery = useQuery(galleryQuery);
 
   const pendingCount =
     (bookings.data ?? []).filter((item) => item.status === "pending").length +
@@ -280,6 +285,12 @@ function AdminDashboard() {
             ) : null}
             {panel === "admins" ? (
               <AdminManagementPanel currentUserId={user.id} />
+            ) : null}
+            {panel === "gallery" ? (
+              <AdminGalleryPanel
+                items={gallery.data ?? []}
+                onRefresh={() => refresh("gallery")}
+              />
             ) : null}
           </div>
         </main>
