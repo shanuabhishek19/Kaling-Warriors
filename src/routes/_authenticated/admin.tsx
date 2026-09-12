@@ -1007,6 +1007,8 @@ function GroundPanel({
   onRefresh: () => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<GroundSlot | null>(null);
+  const [working, setWorking] = useState<string | null>(null);
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -1015,19 +1017,27 @@ function GroundPanel({
       toast.error("Slot label is required.");
       return;
     }
-    const { error } = await supabase.from("ground_slots").insert({
+    const payload = {
       label,
       start_time: String(form.get("start_time") ?? "09:00"),
       end_time: String(form.get("end_time") ?? "11:00"),
       weekday_price_inr: Number(form.get("weekday_price_inr")) || 0,
       weekend_price_inr: Number(form.get("weekend_price_inr")) || 0,
-      active: true,
-      sort_order: slots.length,
-    });
-    if (error) toast.error(error.message);
+    };
+    if (payload.end_time <= payload.start_time) {
+      toast.error("End time must be after start time.");
+      return;
+    }
+    const result = editing
+      ? await supabase.from("ground_slots").update(payload).eq("id", editing.id)
+      : await supabase
+          .from("ground_slots")
+          .insert({ ...payload, active: true, sort_order: slots.length });
+    if (result.error) toast.error(result.error.message);
     else {
-      toast.success("Ground slot added");
+      toast.success(editing ? "Ground slot updated" : "Ground slot added");
       setOpen(false);
+      setEditing(null);
       await onRefresh();
     }
   }
@@ -1039,6 +1049,22 @@ function GroundPanel({
     if (error) toast.error(error.message);
     else await onRefresh();
   }
+  async function remove(id: string) {
+    if (
+      !window.confirm(
+        "Are you sure you want to remove this ground slot? This action cannot be undone.",
+      )
+    )
+      return;
+    setWorking(id);
+    const result = await supabase.from("ground_slots").delete().eq("id", id);
+    setWorking(null);
+    if (result.error)
+      toast.error(
+        "This slot cannot be removed because it has existing bookings. Close it instead.",
+      );
+    else await onRefresh();
+  }
   return (
     <>
       <PageIntro
@@ -1046,7 +1072,12 @@ function GroundPanel({
         title="Ground slots"
         description="Control bookable hours and INR pricing for weekday and weekend sessions."
         action={
-          <Button onClick={() => setOpen((value) => !value)}>
+          <Button
+            onClick={() => {
+              setEditing(null);
+              setOpen((value) => !value);
+            }}
+          >
             <FilePlus2 className="size-4" /> Add slot
           </Button>
         }
@@ -1060,28 +1091,31 @@ function GroundPanel({
             name="label"
             label="Slot label"
             placeholder="Morning session"
+            defaultValue={editing?.label}
           />
           <Field
             name="start_time"
             label="Starts"
             type="time"
-            defaultValue="09:00"
+            defaultValue={editing?.start_time ?? "09:00"}
           />
           <Field
             name="end_time"
             label="Ends"
             type="time"
-            defaultValue="11:00"
+            defaultValue={editing?.end_time ?? "11:00"}
           />
           <Field
             name="weekday_price_inr"
             label="Weekday price (₹)"
             type="number"
+            defaultValue={editing?.weekday_price_inr ?? 0}
           />
           <Field
             name="weekend_price_inr"
             label="Weekend price (₹)"
             type="number"
+            defaultValue={editing?.weekend_price_inr ?? 0}
           />
           <div className="flex gap-2 sm:col-span-2">
             <Button type="submit">
@@ -1114,13 +1148,34 @@ function GroundPanel({
                 {inr(slot.weekend_price_inr)}
               </p>
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => toggle(slot.id, slot.active)}
-            >
-              {slot.active ? "Close slot" : "Reopen slot"}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setEditing(slot);
+                  setOpen(true);
+                }}
+              >
+                Edit
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => toggle(slot.id, slot.active)}
+              >
+                {slot.active ? "Close slot" : "Reopen slot"}
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-destructive hover:text-destructive"
+                disabled={working === slot.id}
+                onClick={() => remove(slot.id)}
+              >
+                Remove
+              </Button>
+            </div>
           </div>
         ))}
         {slots.length === 0 ? (
