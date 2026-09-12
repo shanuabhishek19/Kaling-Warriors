@@ -652,12 +652,12 @@ function MatchesPanel({
       toast.error("Opponent, date and venue are required.");
       return;
     }
-    const result = editing
+    const result = editing?.id
       ? await supabase.from("matches").update(payload).eq("id", editing.id)
       : await supabase.from("matches").insert(payload);
     if (result.error) toast.error(result.error.message);
     else {
-      toast.success(editing ? "Match updated" : "Match added");
+      toast.success(editing?.id ? "Match updated" : "Match added");
       setEditing(null);
       await onRefresh();
     }
