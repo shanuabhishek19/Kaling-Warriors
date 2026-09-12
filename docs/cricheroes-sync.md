@@ -21,6 +21,11 @@ The worker preserves admin-owned values such as player roles, bios, jersey numbe
 club logo, and ground settings. Apply the migration
 `20260912140000_add_cricheroes_sync_metadata.sql` before enabling the workflow.
 
+Edge Functions are deployed by `.github/workflows/deploy-supabase-functions.yml`.
+Configure the GitHub repository secret `SUPABASE_ACCESS_TOKEN` with a Supabase
+personal access token that can deploy functions. The first deployment can also be
+started manually from GitHub Actions.
+
 ## Important limitation
 
 `cricheroes` is an unofficial Selenium scraper. CricHeroes can block automation or

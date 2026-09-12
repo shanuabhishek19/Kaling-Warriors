@@ -118,10 +118,12 @@ function BookGroundPage() {
       const email = await supabase.functions.invoke("send-notification-email", {
         body: { kind: "booking", record_id: saved?.id },
       });
-      if (email.error)
+      if (email.error) {
+        console.error("Booking notification failed", email.error);
         toast.warning(
-          "Booking saved, but email notification could not be sent.",
+          "Booking saved. Email notification is temporarily unavailable.",
         );
+      }
     },
     onSuccess: () => {
       setDone(true);

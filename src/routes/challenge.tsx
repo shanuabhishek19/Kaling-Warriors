@@ -89,10 +89,12 @@ function ChallengePage() {
       const email = await supabase.functions.invoke("send-notification-email", {
         body: { kind: "challenge", record_id: saved?.id },
       });
-      if (email.error)
+      if (email.error) {
+        console.error("Challenge notification failed", email.error);
         toast.warning(
-          "Challenge saved, but email notification could not be sent.",
+          "Challenge saved. Email notification is temporarily unavailable.",
         );
+      }
     },
     onSuccess: () => {
       setDone(true);
