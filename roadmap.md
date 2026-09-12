@@ -1,0 +1,6 @@
+- [ ] Add role-safe player fields, validation, edit/photo/team-logo management
+- [ ] Add authenticated schedule CRUD with immediate UI refresh
+- [ ] Add secure multi-admin and password-management flows
+- [ ] Add server-side challenge/booking email notifications
+- [ ] Apply required database migrations and verify existing data paths
+- [ ] Run build and focused browser regression checks
