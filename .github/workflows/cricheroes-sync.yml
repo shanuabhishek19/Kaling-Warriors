@@ -21,6 +21,7 @@ jobs:
       - name: Sync CricHeroes
         env:
           CRICHEROES_TEAM_URL: "12483791/kalinga-warriors"
+          CRICHEROES_COOKIES_B64: ${{ secrets.CRICHEROES_COOKIES_B64 }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           TEAM_SETTINGS_ID: ${{ secrets.TEAM_SETTINGS_ID }}

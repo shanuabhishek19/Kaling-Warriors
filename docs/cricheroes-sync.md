@@ -8,6 +8,7 @@ Configure these GitHub repository secrets:
 - `SUPABASE_URL`: the project URL
 - `SUPABASE_SERVICE_ROLE_KEY`: Supabase service-role key; never expose it to the browser
 - `TEAM_SETTINGS_ID`: UUID of the single `team_settings` row
+- `CRICHEROES_COOKIES_B64`: optional base64-encoded cookie JSON from an authenticated CricHeroes browser session
 - `GITHUB_SYNC_TOKEN`: GitHub token with Actions write access for this repository
 
 Administrators can also start the workflow from the dashboard's **CricHeroes sync** panel.
@@ -16,6 +17,11 @@ never sent to the browser.
 
 The worker uses the public profile URL `12483791/kalinga-warriors` by default. Set
 `CRICHEROES_TEAM_URL` in the workflow if the team profile changes.
+
+CricHeroes currently signs in with a mobile number and one-time password. For
+authenticated pages, sign in manually, export the CricHeroes cookies as JSON,
+base64-encode that JSON, and save it as the `CRICHEROES_COOKIES_B64` GitHub secret.
+Never commit the cookie export or put it in browser-visible application settings.
 
 The worker uses Selenium to load CricHeroes' public team routes and BeautifulSoup
 to parse the current members and matches pages. It preserves admin-owned values

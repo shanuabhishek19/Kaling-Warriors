@@ -9,6 +9,8 @@ import os
 import re
 import sys
 import time
+import base64
+import json
 from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Any
@@ -69,6 +71,25 @@ def page_source(driver: webdriver.Chrome, path: str) -> BeautifulSoup:
     return BeautifulSoup(driver.page_source, "html.parser")
 
 
+def load_authenticated_session(driver: webdriver.Chrome) -> None:
+    encoded = os.environ.get("CRICHEROES_COOKIES_B64", "").strip()
+    if not encoded:
+        return
+    payload = json.loads(base64.b64decode(encoded).decode("utf-8"))
+    cookies = payload.get("cookies", []) if isinstance(payload, dict) else payload
+    driver.get("https://cricheroes.com/")
+    for cookie in cookies:
+        driver.add_cookie(
+            {
+                key: cookie[key]
+                for key in ("name", "value", "domain", "path", "expiry", "secure", "httpOnly", "sameSite")
+                if key in cookie
+            }
+        )
+    driver.refresh()
+    print("Loaded authenticated CricHeroes session.")
+
+
 def parse_players(soup: BeautifulSoup) -> list[SourcePlayer]:
     players = []
     for card in soup.select("div.card"):
@@ -117,6 +138,7 @@ def get_source() -> dict[str, Any]:
     options.add_argument("--no-sandbox")
     driver = webdriver.Chrome(options=options)
     try:
+        load_authenticated_session(driver)
         members = page_source(driver, "members")
         matches = page_source(driver, "matches")
         name = next(
